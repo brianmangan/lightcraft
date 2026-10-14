@@ -1,0 +1,44 @@
+# Unsigned Windows x64 lightcraft.exe for the portable folder: the release job's build, without
+# signing, WiX or the CLI.
+name: Portable Windows x64
+
+on:
+  push:
+    branches: [wheel-speed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    env:
+      TARGET: x86_64-pc-windows-msvc
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: storytold/craft-fonts
+          ref: 8dcdacd5153e64560d109541a47d806f26f048c0 # the pin release.yml uses for v0.7.1
+          path: craft-fonts
+      - uses: dtolnay/rust-toolchain@686976e191b89faba57d3206551f0f330d8cb249 # stable
+        with:
+          targets: x86_64-pc-windows-msvc
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          key: portable-windows-x64
+      - name: Build
+        shell: pwsh
+        env:
+          CRAFT_FONTS_DIR: ${{ github.workspace }}/craft-fonts
+          CRAFT_FONTS_REQUIRED: "1"
+          LIGHTCRAFT_REQUIRE_WINRES: "1"
+          # Static CRT, as package.ps1: no VC++ redistributable needed.
+          CARGO_TARGET_X86_64_PC_WINDOWS_MSVC_RUSTFLAGS: -C target-feature=+crt-static
+        run: cargo build --release --locked -p lightcraft --features lightcraft/heif --target $env:TARGET
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: lightcraft-windows-x64-portable
+          path: target/x86_64-pc-windows-msvc/release/lightcraft.exe
+          if-no-files-found: error
