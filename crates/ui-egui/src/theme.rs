@@ -352,6 +352,23 @@ pub fn current(ctx: &egui::Context) -> Option<ThemeKind> {
     ctx.data(|d| d.get_temp::<ThemeKind>(theme_id()))
 }
 
+/// Points a mouse wheel notch scrolls by default (egui's 40 took 50+ notches through an open Edit
+/// panel; Lightroom moves about this much per notch).
+pub const WHEEL_LINE_POINTS: f32 = 100.0;
+
+/// Points a wheel notch scrolls: `LIGHTCRAFT_WHEEL_POINTS` when it is a positive number, else
+/// [`WHEEL_LINE_POINTS`].
+pub fn wheel_line_points() -> f32 {
+    static POINTS: std::sync::OnceLock<f32> = std::sync::OnceLock::new();
+    *POINTS.get_or_init(|| {
+        std::env::var("LIGHTCRAFT_WHEEL_POINTS")
+            .ok()
+            .and_then(|v| v.trim().parse::<f32>().ok())
+            .filter(|p| p.is_finite() && *p > 0.0)
+            .unwrap_or(WHEEL_LINE_POINTS)
+    })
+}
+
 /// Style `ctx` with the default theme.
 pub fn apply(ctx: &egui::Context) {
     apply_kind(ctx, ThemeKind::default());
@@ -362,6 +379,13 @@ pub fn apply(ctx: &egui::Context) {
 pub fn apply_kind(ctx: &egui::Context, kind: ThemeKind) {
     // Keep photo zoom shortcuts from resizing egui itself.
     ctx.options_mut(|o| o.zoom_with_keyboard = false);
+    // Trackpads report points and are unaffected. A wheel zoom notch stays egui's stock ~1.22x
+    // (exp(40 / 200)) however far a notch scrolls.
+    let line = wheel_line_points();
+    ctx.options_mut(|o| {
+        o.input_options.line_scroll_speed = line;
+        o.input_options.scroll_zoom_speed = 40.0 / 200.0 / line;
+    });
     let t = Tokens::for_kind(kind);
     ctx.data_mut(|d| {
         d.insert_temp(egui::Id::NULL, t);
