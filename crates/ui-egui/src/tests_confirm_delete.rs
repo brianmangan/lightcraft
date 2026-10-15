@@ -1,5 +1,5 @@
 //! ⌫ in the grid asks before moving photos to Recently Deleted; Return confirms, Esc cancels,
-//! Shift+⌫ moves them without asking.
+//! Shift+⌫ moves them without asking, except from inside an album.
 
 use std::time::Duration;
 
@@ -71,4 +71,18 @@ fn windows_shift_delete_cut_event_skips_the_question() {
     h.settle(SETTLE);
     assert!(h.app.ui.dialog.is_none(), "⇧Delete doesn't ask");
     assert!(deleted(&h, id), "⇧Delete deletes the photo");
+}
+
+#[test]
+fn shift_delete_does_nothing_in_an_album() {
+    let (mut h, id) = asking();
+    key(&mut h, json!({"key": "Escape"}));
+    let album = h.app.run("album.create", json!({"name": "Keepers"})).unwrap()["id"].as_u64().unwrap();
+    let r = h.request("engine.execute", json!({"command": "library.source", "params": {"kind": "album", "id": album}}), T);
+    assert_eq!(r["ok"], true, "{r}");
+    let r = h.request("engine.execute", json!({"command": "library.select", "params": {"ids": [id]}}), T);
+    assert_eq!(r["ok"], true, "{r}");
+    key(&mut h, json!({"key": "delete", "shift": true}));
+    assert!(h.app.ui.dialog.is_none(), "Shift+⌫ doesn't ask");
+    assert!(!deleted(&h, id), "Shift+⌫ deletes nothing from inside an album");
 }

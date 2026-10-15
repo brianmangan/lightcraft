@@ -492,6 +492,11 @@ pub fn handle(app: &mut LightcraftApp, ctx: &egui::Context) {
                     R::RedEye => continue,
                     _ => {}
                 }
+                // 0.8.0's ⌫ in an album deletes from the whole library, too easy to do unasked
+                if delete_now && matches!(app.session.source, lightcraft_engine::LibrarySource::Album(_)) {
+                    app.toast(ctx, crate::i18n::tr("Shift+Delete doesn't delete from an album"));
+                    continue;
+                }
                 if !delete_now && crate::menus::confirm_delete(app) {
                     continue;
                 }
