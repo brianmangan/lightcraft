@@ -272,6 +272,8 @@ fn matches(i: &egui::InputState, m: Modifiers, k: Key) -> bool {
         let (key, physical_key, modifiers) = match e {
             egui::Event::Key { key, physical_key, pressed: true, modifiers, .. } => (key, physical_key, modifiers),
             egui::Event::Copy => (&Key::C, &None, &clipboard),
+            // Windows' ⇧Delete arrives as Cut: here it's the Shift+⌫ shortcut, not ⌘X
+            egui::Event::Cut if i.modifiers.shift && !i.modifiers.command => (&Key::Delete, &None, &i.modifiers),
             egui::Event::Cut => (&Key::X, &None, &clipboard),
             egui::Event::Paste(_) => (&Key::V, &None, &clipboard),
             _ => return false,

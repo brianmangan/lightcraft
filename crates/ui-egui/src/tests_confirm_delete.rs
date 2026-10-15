@@ -61,3 +61,14 @@ fn shift_delete_skips_the_question() {
     assert!(h.app.ui.dialog.is_none(), "Shift+⌫ doesn't ask");
     assert!(deleted(&h, id), "Shift+⌫ deletes the photo");
 }
+
+/// On Windows the windowing layer turns ⇧Delete into a Cut event instead of a key press.
+#[test]
+fn windows_shift_delete_cut_event_skips_the_question() {
+    let (mut h, id) = asking();
+    key(&mut h, json!({"key": "Escape"}));
+    h.events.extend([egui::Event::ModifiersChanged(egui::Modifiers::SHIFT), egui::Event::Cut]);
+    h.settle(SETTLE);
+    assert!(h.app.ui.dialog.is_none(), "⇧Delete doesn't ask");
+    assert!(deleted(&h, id), "⇧Delete deletes the photo");
+}
