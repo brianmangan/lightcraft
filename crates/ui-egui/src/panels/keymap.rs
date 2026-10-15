@@ -128,8 +128,9 @@ fn row(app: &mut LightcraftApp, ui: &mut egui::Ui, t: &Tokens, b: &Bindable, sc:
 
 /// Keys that aren't a command's own shortcut (ratings, labels, secondary keys): listed, not editable.
 /// One the user gave to a command shows struck through.
-fn fixed_keys(app: &LightcraftApp, ui: &mut egui::Ui, t: &Tokens, mac: bool, needle: &str) {
-    let mut fixed: Vec<(String, &str)> = Vec::new();
+/// The keys handled outside the keymap, as (shortcut, label).
+pub(crate) fn fixed_entries() -> Vec<(String, &'static str)> {
+    let mut fixed: Vec<(String, &'static str)> = Vec::new();
     for (sc, id, _) in shortcuts::ALIASES {
         let label = shortcuts::find_bindable(id).map_or(*id, |b| b.label);
         fixed.push((sc.to_string(), label));
@@ -151,7 +152,12 @@ fn fixed_keys(app: &LightcraftApp, ui: &mut egui::Ui, t: &Tokens, mac: bool, nee
     for (sc, label) in [("6", "Red label"), ("7", "Yellow label"), ("8", "Green label"), ("9", "Blue label")] {
         fixed.push((sc.to_string(), label));
     }
-    let fixed: Vec<_> = fixed
+    fixed.push(("Shift+Delete".to_string(), "Delete photo without asking"));
+    fixed
+}
+
+fn fixed_keys(app: &LightcraftApp, ui: &mut egui::Ui, t: &Tokens, mac: bool, needle: &str) {
+    let fixed: Vec<_> = fixed_entries()
         .into_iter()
         .filter(|(sc, label)| {
             needle.is_empty() || crate::i18n::tr(label).to_lowercase().contains(needle) || menu_text(sc, mac).to_lowercase().contains(needle)

@@ -86,3 +86,11 @@ fn shift_delete_does_nothing_in_an_album() {
     assert!(h.app.ui.dialog.is_none(), "Shift+⌫ doesn't ask");
     assert!(!deleted(&h, id), "Shift+⌫ deletes nothing from inside an album");
 }
+
+/// The Shortcuts dialog's Fixed keys list shows Shift+⌫, as the key the shortcut handler checks.
+#[test]
+fn shortcuts_dialog_lists_shift_delete() {
+    let fixed = crate::panels::keymap::fixed_entries();
+    let (sc, _) = fixed.iter().find(|(_, label)| *label == "Delete photo without asking").expect("listed");
+    assert_eq!(crate::shortcuts::parse(sc), Some((egui::Modifiers::SHIFT, egui::Key::Backspace)));
+}
