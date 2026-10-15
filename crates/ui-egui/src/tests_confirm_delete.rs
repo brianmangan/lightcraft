@@ -1,4 +1,5 @@
-//! ⌫ in the grid asks before moving photos to Recently Deleted; Return confirms, Esc cancels.
+//! ⌫ in the grid asks before moving photos to Recently Deleted; Return confirms, Esc cancels,
+//! Shift+⌫ moves them without asking.
 
 use std::time::Duration;
 
@@ -50,4 +51,13 @@ fn escape_cancels_the_delete() {
     key(&mut h, json!({"key": "Escape"}));
     assert!(h.app.ui.dialog.is_none(), "Esc closes the dialog");
     assert!(!deleted(&h, id), "Esc deletes nothing");
+}
+
+#[test]
+fn shift_delete_skips_the_question() {
+    let (mut h, id) = asking();
+    key(&mut h, json!({"key": "Escape"}));
+    key(&mut h, json!({"key": "delete", "shift": true}));
+    assert!(h.app.ui.dialog.is_none(), "Shift+⌫ doesn't ask");
+    assert!(deleted(&h, id), "Shift+⌫ deletes the photo");
 }

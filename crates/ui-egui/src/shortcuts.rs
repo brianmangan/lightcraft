@@ -347,6 +347,8 @@ pub fn handle(app: &mut LightcraftApp, ctx: &egui::Context) {
     // shortcuts the native menu bar handles (it consumes those key presses itself)
     let native = |sc: &str| app.native_shortcuts.contains(sc);
     let mut aliased: Vec<(&str, serde_json::Value)> = Vec::new();
+    // Shift+⌫ deletes without the confirmation (like Explorer's Shift+Delete skips its question)
+    let mut delete_now = false;
     let keymap = &app.ui.settings.keymap;
     let grid = library_grid(app);
     // keys the user gave to a command: the fixed bindings below (aliases, ratings) yield to them
@@ -376,6 +378,10 @@ pub fn handle(app: &mut LightcraftApp, ctx: &egui::Context) {
             {
                 aliased.push((id, serde_json::from_str(params).unwrap_or_default()));
             }
+        }
+        if matches(i, Modifiers::SHIFT, Key::Backspace) && !taken.contains(&(Modifiers::SHIFT, Key::Backspace)) {
+            fire.push("photo.delete".to_string());
+            delete_now = true;
         }
         // rating 0-5, colour labels 6-9 (with Shift: and advance)
         for (n, key) in [Key::Num0, Key::Num1, Key::Num2, Key::Num3, Key::Num4, Key::Num5].iter().enumerate() {
@@ -484,7 +490,7 @@ pub fn handle(app: &mut LightcraftApp, ctx: &egui::Context) {
                     R::RedEye => continue,
                     _ => {}
                 }
-                if crate::menus::confirm_delete(app) {
+                if !delete_now && crate::menus::confirm_delete(app) {
                     continue;
                 }
             }
