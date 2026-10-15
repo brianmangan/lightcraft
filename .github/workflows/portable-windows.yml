@@ -1,5 +1,5 @@
 # Unsigned Windows x64 lightcraft.exe for the portable folder: the release job's build, without
-# signing, WiX or the CLI.
+# signing, WiX or the CLI. The local patches' tests also run on macOS (WSL covers Linux).
 name: Portable Windows x64
 
 on:
@@ -46,3 +46,15 @@ jobs:
           name: lightcraft-windows-x64-portable
           path: target/x86_64-pc-windows-msvc/release/lightcraft.exe
           if-no-files-found: error
+
+  # macOS has its own modifier handling in shortcuts.rs (Cmd vs Ctrl), which WSL can't exercise
+  test-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: dtolnay/rust-toolchain@686976e191b89faba57d3206551f0f330d8cb249 # stable
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          key: patch-tests-macos
+      - name: Test patches
+        run: cargo test --locked -p lightcraft-ui-egui --lib -- tests_confirm_delete tests_keymap tests_copy_paste_dialogs
