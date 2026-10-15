@@ -87,10 +87,17 @@ fn shift_delete_does_nothing_in_an_album() {
     assert!(!deleted(&h, id), "Shift+⌫ deletes nothing from inside an album");
 }
 
-/// The Shortcuts dialog's Fixed keys list shows Shift+⌫, as the key the shortcut handler checks.
+/// Delete Photo Without Asking is a keymap command (Shift+⌫ by default), so it can be rebound.
 #[test]
-fn shortcuts_dialog_lists_shift_delete() {
-    let fixed = crate::panels::keymap::fixed_entries();
-    let (sc, _) = fixed.iter().find(|(_, label)| *label == "Delete photo without asking").expect("listed");
-    assert_eq!(crate::shortcuts::parse(sc), Some((egui::Modifiers::SHIFT, egui::Key::Backspace)));
+fn delete_without_asking_can_be_rebound() {
+    let b = crate::shortcuts::find_bindable("photo.deleteNow").expect("bindable");
+    assert_eq!(b.default, Some("Shift+Delete"));
+    let (mut h, id) = asking();
+    key(&mut h, json!({"key": "Escape"}));
+    crate::shortcuts::assign(&mut h.app.ui.settings.keymap, "photo.deleteNow", Some("F9")).unwrap();
+    key(&mut h, json!({"key": "delete", "shift": true}));
+    assert!(!deleted(&h, id), "the old key no longer deletes");
+    key(&mut h, json!({"key": "F9"}));
+    assert!(h.app.ui.dialog.is_none(), "the new key doesn't ask");
+    assert!(deleted(&h, id), "the new key deletes the photo");
 }

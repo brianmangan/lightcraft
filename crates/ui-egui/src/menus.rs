@@ -68,6 +68,7 @@ pub const UI_COMMANDS: &[UiCommand] = &[
     ("view.faceBoxes", "Face Boxes", None, "View"),
     ("view.reference", "Reference View", Some("Shift+R"), "View"),
     ("photo.setReference", "Set as Reference Photo", None, ""),
+    ("photo.deleteNow", "Delete Photo Without Asking", Some("Shift+Delete"), ""),
     ("compare.swap", "Swap Compare Photos", None, "View"),
     ("compare.set", "Show in Compare", None, ""),
     ("compare.makeSelect", "Make Candidate the Select", None, "View"),
@@ -479,6 +480,8 @@ pub fn run_ui_command(app: &mut LightcraftApp, id: &str, p: &Value) -> Option<Re
         }
         "view.appearance" => appearance_command(app, p),
         "view.theme" => theme_command(app, p),
+        // the shortcut handler keeps Delete's per-panel and album rules in front of it
+        "photo.deleteNow" => app.run("photo.delete", json!({})),
         "library.selectOnlyActive" => {
             let Some(active) = app.session.active() else { return Some(Err("no active photo".into())) };
             app.run("library.select", json!({"ids": [active.0], "active": active.0}))

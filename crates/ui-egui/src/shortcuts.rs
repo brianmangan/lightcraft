@@ -349,8 +349,6 @@ pub fn handle(app: &mut LightcraftApp, ctx: &egui::Context) {
     // shortcuts the native menu bar handles (it consumes those key presses itself)
     let native = |sc: &str| app.native_shortcuts.contains(sc);
     let mut aliased: Vec<(&str, serde_json::Value)> = Vec::new();
-    // Shift+⌫ deletes without the confirmation (like Explorer's Shift+Delete skips its question)
-    let mut delete_now = false;
     let keymap = &app.ui.settings.keymap;
     let grid = library_grid(app);
     // keys the user gave to a command: the fixed bindings below (aliases, ratings) yield to them
@@ -380,10 +378,6 @@ pub fn handle(app: &mut LightcraftApp, ctx: &egui::Context) {
             {
                 aliased.push((id, serde_json::from_str(params).unwrap_or_default()));
             }
-        }
-        if matches(i, Modifiers::SHIFT, Key::Backspace) && !taken.contains(&(Modifiers::SHIFT, Key::Backspace)) {
-            fire.push("photo.delete".to_string());
-            delete_now = true;
         }
         // rating 0-5, colour labels 6-9 (with Shift: and advance)
         for (n, key) in [Key::Num0, Key::Num1, Key::Num2, Key::Num3, Key::Num4, Key::Num5].iter().enumerate() {
@@ -474,8 +468,10 @@ pub fn handle(app: &mut LightcraftApp, ctx: &egui::Context) {
             }
             // Delete acts on what's being edited: the active mask in the Masking panel; never the
             // photo while retouching (spots are removed from their own panel).
-            if f == "photo.delete" {
+            if f == "photo.delete" || f == "photo.deleteNow" {
                 use crate::state::RightPanel as R;
+                // Delete Photo Without Asking (Shift+⌫, like Explorer's Shift+Delete) skips the question
+                let delete_now = f == "photo.deleteNow";
                 match app.ui.right {
                     R::Masking => {
                         if app.session.active_mask.is_some() {
@@ -494,7 +490,7 @@ pub fn handle(app: &mut LightcraftApp, ctx: &egui::Context) {
                 }
                 // 0.8.0's ⌫ in an album deletes from the whole library, too easy to do unasked
                 if delete_now && matches!(app.session.source, lightcraft_engine::LibrarySource::Album(_)) {
-                    app.toast(ctx, crate::i18n::tr("Shift+Delete doesn't delete from an album"));
+                    app.toast(ctx, crate::i18n::tr("Delete Photo Without Asking is off inside albums"));
                     continue;
                 }
                 if !delete_now && crate::menus::confirm_delete(app) {
