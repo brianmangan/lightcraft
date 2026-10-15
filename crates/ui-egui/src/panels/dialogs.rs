@@ -1926,7 +1926,7 @@ fn choices<V: PartialEq + Copy>(ui: &mut egui::Ui, label: &str, id: &str, option
 /// Dialogs that Return confirms with nothing focused (those with text fields confirm from the
 /// field: `dialog_field`).
 fn return_confirms(dlg: &Dialog) -> bool {
-    matches!(dlg, Dialog::CopySettings { .. } | Dialog::PasteSettings { .. })
+    matches!(dlg, Dialog::CopySettings { .. } | Dialog::PasteSettings { .. } | Dialog::ConfirmDelete { .. })
 }
 
 /// A dialog's one text field: it keeps the focus (except while its own menu has it) and opens
