@@ -228,5 +228,5 @@ fn a_wheel_notch_scrolls_a_hundred_points() {
     }
     idle(&mut h, 120);
     let moved = grid_y(&h) - y0;
-    assert!(moved >= 3.0 * crate::theme::WHEEL_LINE_POINTS - 1.0, "three notches scrolled {moved} points");
+    assert!(moved >= 3.0 * crate::theme::wheel_line_points() - 1.0, "three notches scrolled {moved} points");
 }

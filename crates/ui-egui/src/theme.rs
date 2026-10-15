@@ -367,12 +367,27 @@ fn craft_font_name(f: &lightcraft_engine::CraftFont) -> String {
     format!("craft-fonts {} {}", f.family, f.style)
 }
 
-/// Points one mouse-wheel notch (a line) scrolls.
+/// Points one mouse-wheel notch (a line) scrolls by default.
 pub const WHEEL_LINE_POINTS: f32 = 100.0;
 
+/// Points a wheel notch scrolls: `LIGHTCRAFT_WHEEL_POINTS` when it is a positive number, else
+/// [`WHEEL_LINE_POINTS`].
+pub fn wheel_line_points() -> f32 {
+    static POINTS: std::sync::OnceLock<f32> = std::sync::OnceLock::new();
+    *POINTS.get_or_init(|| {
+        std::env::var("LIGHTCRAFT_WHEEL_POINTS")
+            .ok()
+            .and_then(|v| v.trim().parse::<f32>().ok())
+            .filter(|p| p.is_finite() && *p > 0.0)
+            .unwrap_or(WHEEL_LINE_POINTS)
+    })
+}
+
 /// Zoom per wheel point (`exp(speed × points)`): egui's 1/200 at its stock 40-point notch, rescaled so
-/// one notch still zooms the same amount now that it scrolls [`WHEEL_LINE_POINTS`].
-pub const WHEEL_ZOOM_PER_POINT: f32 = 40.0 / 200.0 / WHEEL_LINE_POINTS;
+/// one notch still zooms the same amount however far it scrolls ([`wheel_line_points`]).
+pub fn wheel_zoom_per_point() -> f32 {
+    40.0 / 200.0 / wheel_line_points()
+}
 
 fn theme_id() -> egui::Id {
     egui::Id::new("lightcraft-theme")
@@ -393,13 +408,13 @@ pub fn apply(ctx: &egui::Context) {
 pub fn apply_kind(ctx: &egui::Context, kind: ThemeKind) {
     // Keep photo zoom shortcuts from resizing egui itself.
     ctx.options_mut(|o| o.zoom_with_keyboard = false);
-    // A mouse wheel notch scrolls 100 points (egui's default 40 took 50+ notches through an open
+    // A mouse wheel notch scrolls 100 points by default (egui's default 40 took 50+ notches through an open
     // Edit panel; Lightroom moves about this much per notch). Trackpads report points and are
     // unaffected.
     // A modifier-wheel (and the loupe's plain-wheel) zoom notch stays about 1.22x, as it was at 40 points.
     ctx.options_mut(|o| {
-        o.input_options.line_scroll_speed = WHEEL_LINE_POINTS;
-        o.input_options.scroll_zoom_speed = WHEEL_ZOOM_PER_POINT;
+        o.input_options.line_scroll_speed = wheel_line_points();
+        o.input_options.scroll_zoom_speed = wheel_zoom_per_point();
     });
     let t = Tokens::for_kind(kind);
     ctx.data_mut(|d| {
@@ -457,7 +472,7 @@ mod tests {
             let ctx = egui::Context::default();
             apply_kind(&ctx, kind);
             let (line, zoom) = ctx.options(|o| (o.input_options.line_scroll_speed, o.input_options.scroll_zoom_speed));
-            assert_eq!(line, WHEEL_LINE_POINTS, "{kind:?}");
+            assert_eq!(line, wheel_line_points(), "{kind:?}");
             assert!(((zoom * line).exp() - (40.0_f32 / 200.0).exp()).abs() < 1e-4, "{kind:?}: a notch zooms {}", (zoom * line).exp());
         }
     }

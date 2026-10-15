@@ -412,12 +412,12 @@ pub fn slider(ui: &mut Ui, spec: &ControlSpec, value: f64, enabled: bool, label_
 
 /// Convert vertical wheel movement to bounded slider steps, keeping sub-notch
 /// trackpad movement between frames without amplifying a single large event. One mouse-wheel
-/// notch ([`crate::theme::WHEEL_LINE_POINTS`]) is one step.
+/// notch ([`crate::theme::wheel_line_points`]) is one step.
 fn wheel_nudges(remainder: &mut f32, delta: f32) -> f64 {
-    const POINTS_PER_STEP: f32 = crate::theme::WHEEL_LINE_POINTS;
-    let total = (*remainder + delta).clamp(-10.0 * POINTS_PER_STEP, 10.0 * POINTS_PER_STEP);
-    let steps = (total / POINTS_PER_STEP).trunc();
-    *remainder = total - steps * POINTS_PER_STEP;
+    let per_step = crate::theme::wheel_line_points();
+    let total = (*remainder + delta).clamp(-10.0 * per_step, 10.0 * per_step);
+    let steps = (total / per_step).trunc();
+    *remainder = total - steps * per_step;
     f64::from(steps)
 }
 
@@ -682,7 +682,7 @@ mod tests {
     #[test]
     fn wheel_steps_accumulate_small_movements_and_preserve_direction() {
         // one mouse-wheel notch is one step, whatever a notch scrolls
-        let notch = crate::theme::WHEEL_LINE_POINTS;
+        let notch = crate::theme::wheel_line_points();
         let mut remainder = 0.0;
         assert_eq!(wheel_nudges(&mut remainder, notch * 0.375), 0.0);
         assert_eq!(wheel_nudges(&mut remainder, notch * 0.625), 1.0);
