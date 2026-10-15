@@ -4,7 +4,7 @@ name: Portable Windows x64
 
 on:
   push:
-    branches: [wheel-speed]
+    branches: ["wheel-speed*"]
   workflow_dispatch:
 
 permissions:
@@ -20,7 +20,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: storytold/craft-fonts
-          ref: 8dcdacd5153e64560d109541a47d806f26f048c0 # the pin release.yml uses for v0.7.1
+          ref: 8dcdacd5153e64560d109541a47d806f26f048c0 # the pin release.yml uses for v0.7.1 and v0.8.0
           path: craft-fonts
       - uses: dtolnay/rust-toolchain@686976e191b89faba57d3206551f0f330d8cb249 # stable
         with:
@@ -28,6 +28,10 @@ jobs:
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
           key: portable-windows-x64
+      # the local patches' tests on real Windows (WSL only runs them on Linux)
+      - name: Test patches
+        shell: pwsh
+        run: cargo test --locked -p lightcraft-ui-egui --lib -- tests_confirm_delete tests_keymap tests_copy_paste_dialogs
       - name: Build
         shell: pwsh
         env:
